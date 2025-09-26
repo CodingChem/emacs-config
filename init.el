@@ -26,7 +26,7 @@
 
 (use-package magit
   :commands (magit-status)
-  :config
+  :general
   (my/leader-keys
     "g"  '(:ignore t :which-key "git")
     "gs" '(magit-status :which-key "status")))
@@ -46,6 +46,7 @@
         org-edit-src-content-indentation 2
         org-log-done 'time
         org-log-into-drawer t)
+  :general
   (my/leader-keys
     "x" '(org-capture :which-key "capture")
     "a" '(org-agenda :which-key "agenda"))
@@ -71,6 +72,7 @@
            "* %<%H:%M> %?"
            :if-new (file+head "%<%Y-%m-%d>.org"
                               "#+title: %<%Y-%m-%d>\n"))))
+  :general
   (my/leader-keys
     "n"  '(:ignore t :which-key "notes")
     "nt"  '(org-roam-dailies-goto-today :which-key "today")
@@ -103,3 +105,68 @@
           (lambda ()
             (add-to-list 'TeX-command-list
                          '("LatexMk" "latexmk -pdf %s" TeX-run-TeX nil t))))
+(use-package citar
+  :straight t
+  :custom
+  ;;(citar-bibliography '("~/path/to/your.bib")) ; <-- adjust this path
+  (org-cite-insert-processor 'citar)
+  (org-cite-follow-processor 'citar)
+  (org-cite-activate-processor 'citar)
+  :hook
+  ((org-mode LaTeX-mode) . citar-capf-setup)) ; enables completion-at-point
+;; Vertico: vertical completion UI
+(use-package vertico
+  :straight t
+  :init (vertico-mode))
+
+;; Orderless: fuzzy matching
+(use-package orderless
+  :straight t
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-defaults nil)
+  (completion-category-overrides '((file (styles partial-completion)))))
+
+;; Marginalia: metadata in minibuffer
+(use-package marginalia
+  :straight t
+  :init (marginalia-mode))
+
+;; Embark: contextual actions
+(use-package embark
+  :straight t
+  :bind
+  (("C-." . embark-act)
+   ("C-h B" . embark-bindings))
+  :init
+  (setq prefix-help-command #'embark-prefix-help-command))
+(use-package lsp-mode
+  :straight t
+  :hook ((python-mode . lsp)
+         (rust-mode . lsp)
+         (c++-mode . lsp)
+         (latex-mode . lsp)) ;; optional, if you use LSP for LaTeX
+  :commands lsp
+  :custom
+  (lsp-enable-snippet t)
+  (lsp-headerline-breadcrumb-enable t))
+
+(use-package lsp-ui
+  :straight t
+  :commands lsp-ui-mode)
+
+(use-package company
+  :straight t
+  :hook (prog-mode . company-mode)
+  :custom
+  (company-minimum-prefix-length 1)
+  (company-idle-delay 0.0))
+(defun my/citar-set-project-bib ()
+  "Set `citar-bibliography` to .bib files in the current project."
+  (when-let* ((project (project-current))
+              (root (project-root project))
+              (bib-files (directory-files-recursively root "\\.bib$")))
+    (setq-local citar-bibliography bib-files)))
+
+(add-hook 'LaTeX-mode-hook #'my/citar-set-project-bib)
+(add-hook 'org-mode-hook #'my/citar-set-project-bib)
