@@ -17,6 +17,7 @@
 
 
 (use-package general
+  :ensure t
   :config
   (general-create-definer my/leader-keys
     :keymaps '(normal visual emacs)
@@ -51,6 +52,7 @@
   )
 
 (use-package org-roam
+  :ensure t
   :init
   (setq org-roam-v2-ack t)
   :custom
@@ -78,6 +80,7 @@
     "nrf" '(org-roam-node-find :which-key "find node"))
   )
 
+(setq visible-bell t)
 
 (setq org-capture-templates
       '(("t" "Task" entry
@@ -94,9 +97,9 @@
   :ensure t
   :config
   (pdf-tools-install))
-(setq TeX-view-program-selection '((output-pdf "PDF Tools"))
+(setq TeX-view-program-selection '((output-pdf "PDF Tools")))
 (setq TeX-command-default "LatexMk")
 (add-hook 'LaTeX-mode-hook
           (lambda ()
             (add-to-list 'TeX-command-list
-                         '("LatexMk" "latexmk -pdf %s" TeX-run-TeX nil t
+                         '("LatexMk" "latexmk -pdf %s" TeX-run-TeX nil t))))
