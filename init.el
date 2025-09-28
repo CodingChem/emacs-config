@@ -13,6 +13,9 @@
   (evil-collection-init))
 
 ;; General settings
+(global-display-line-numbers-mode t)
+(setq display-line-numbers-type 'relative)  ;; or 'absolute or 'visual
+
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
 (menu-bar-mode -1)
@@ -88,6 +91,18 @@
   :init
   (setq prefix-help-command #'embark-prefix-help-command))
 
+(use-package yasnippet
+  :straight t
+  :hook
+  (prog-mode . yas-minor-mode)
+  (org-mode . yas-minor-mode)
+  (latex-mode . yas-minor-mode)
+  :config
+  (yas-reload-all))
+(use-package yasnippet-snippets
+  :straight t
+  :after yasnippet)
+
 (use-package magit
   :commands (magit-status)
   :general
@@ -97,8 +112,6 @@
 (use-package diff-hl
   :straight t
   :hook ((prog-mode . diff-hl-mode)
-	 (org-mode . diff-hl-mode)
-	 (latex-mode . diff-hl-mode)
          (vc-dir-mode . diff-hl-dir-mode)
          (magit-post-refresh . diff-hl-magit-post-refresh))
   :config
@@ -116,6 +129,7 @@
   :hook ((python-mode . lsp)
          (rust-mode . lsp)
          (c++-mode . lsp)
+    	 (csharp-mode . lsp)
          (latex-mode . lsp)) ;; optional, if you use LSP for LaTeX
   :commands lsp
   :custom
@@ -131,13 +145,70 @@
   (company-idle-delay 0.0))
 (use-package flycheck
   :hook (prog-mode . flycheck-mode))
+(use-package vterm
+  :straight t
+  :commands vterm
+  :general
+
+  (my/leader-keys
+    "ot" '(my/toggle-vterm :which-key "toggle terminal"))
+
+  :custom
+  (vterm-shell "/bin/bash")  ;; or zsh, fish, etc.
+  (vterm-max-scrollback 10000))
+
+(defun my/toggle-vterm ()
+  "Toggle a persistent vterm buffer."
+  (interactive)
+  (let ((buf-name "*vterm*"))
+    (if (get-buffer buf-name)
+        (if (eq (current-buffer) (get-buffer buf-name))
+            (previous-buffer)  ;; go back if already in vterm
+          (pop-to-buffer buf-name))
+      (vterm buf-name))))
+
+(with-eval-after-load 'csharp-mode
+    (my/leader-keys
+      :keymaps 'csharp-mode-map
+      "n" '(:ignore t :which-key "new")
+      "nt" '(my/csharp-create-type :which-key "new type")))
+
+(setq lsp-csharp-server 'omnisharp)
+(setq lsp-omnisharp-server-executable "~/tools/omnisharp/OmniSharp")
+
+  ;; Force override of the client definition
+  ;; (lsp-register-client
+  ;;  (make-lsp-client
+  ;;   :new-connection (lsp-stdio-connection '("csharp-ls"))
+  ;;   :major-modes '(csharp-mode)
+  ;;   :server-id 'csharp-ls)))
+
+  (defun my/csharp-create-type (type name)
+    "Create a new C# TYPE (class, record, interface) named NAME in a new file."
+    (interactive
+     (list (completing-read "Type: " '("class" "record" "interface"))
+           (read-string "Name: ")))
+    (let* ((file (concat name ".cs"))
+           (ns (my/csharp-detect-namespace)))
+      (find-file file)
+      (insert (format "namespace %s\n{\n    public %s %s\n    {\n        \n    }\n}" ns type name))
+      (save-buffer)))
+
+  (defun my/csharp-detect-namespace ()
+    "Detect namespace based on project root and file path."
+    (let* ((root (project-root (project-current t)))
+           (relative (file-relative-name default-directory root))
+           (ns (replace-regexp-in-string "/" "." relative)))
+      (replace-regexp-in-string "[^a-zA-Z0-9.]" "" ns)))
 
 (setq org-directory "~/org/")
 (setq org-default-notes-file (expand-file-name "todo.org" org-directory))
 
 (use-package org
   :straight (:type built-in) ;; org is built into Emacs
-  :hook (org-mode . visual-line-mode)
+  :hook ((org-mode . visual-line-mode)
+	 (org-mode . display-line-numbers-mode)
+	 (org-mode . diff-hl-mode))
   :config
   (setq org-hide-emphasis-markers t
         org-startup-indented t
@@ -235,7 +306,16 @@
   (org-cite-follow-processor 'citar)
   (org-cite-activate-processor 'citar)
   :hook
-  ((org-mode LaTeX-mode) . citar-capf-setup)) ; enables completion-at-point
+  ((org-mode LaTeX-mode) . citar-capf-setup)
+  (latex-mode . diff-hl-mode)
+  :general
+  (my/leader-keys
+    :states '(normal visual)
+    :keymaps '(org-mode-map latex-mode-map)
+    "r" '(:ignore t :which-key "reference")
+    "ri" '(citar-insert-reference :which-key "insert reference"))
+  )
+; enables completion-at-point
 ;; Vertico: vertical completion UI
 (use-package vertico
   :straight t
