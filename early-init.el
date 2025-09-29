@@ -29,4 +29,4 @@
 (add-hook 'org-mode-hook
           (lambda ()
             (add-hook 'after-save-hook #'my/org-auto-tangle-on-save
-		      nil 'make-it-local)))
+  		    nil 'make-it-local)))

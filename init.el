@@ -129,7 +129,7 @@
   :hook ((python-mode . lsp)
          (rust-mode . lsp)
          (c++-mode . lsp)
-    	 (csharp-mode . lsp)
+       (csharp-mode . lsp)
          (latex-mode . lsp)) ;; optional, if you use LSP for LaTeX
   :commands lsp
   :custom
@@ -167,39 +167,16 @@
           (pop-to-buffer buf-name))
       (vterm buf-name))))
 
-(with-eval-after-load 'csharp-mode
-    (my/leader-keys
-      :keymaps 'csharp-mode-map
-      "n" '(:ignore t :which-key "new")
-      "nt" '(my/csharp-create-type :which-key "new type")))
+(use-package sharper
+  :demand t
+  :general
+  (my/leader-keys
+    :keymaps 'csharp-mode-map
+    "s" '(sharper-main-transient :which-key "sharper"))
+  )
 
 (setq lsp-csharp-server 'omnisharp)
 (setq lsp-omnisharp-server-executable "~/tools/omnisharp/OmniSharp")
-
-  ;; Force override of the client definition
-  ;; (lsp-register-client
-  ;;  (make-lsp-client
-  ;;   :new-connection (lsp-stdio-connection '("csharp-ls"))
-  ;;   :major-modes '(csharp-mode)
-  ;;   :server-id 'csharp-ls)))
-
-  (defun my/csharp-create-type (type name)
-    "Create a new C# TYPE (class, record, interface) named NAME in a new file."
-    (interactive
-     (list (completing-read "Type: " '("class" "record" "interface"))
-           (read-string "Name: ")))
-    (let* ((file (concat name ".cs"))
-           (ns (my/csharp-detect-namespace)))
-      (find-file file)
-      (insert (format "namespace %s\n{\n    public %s %s\n    {\n        \n    }\n}" ns type name))
-      (save-buffer)))
-
-  (defun my/csharp-detect-namespace ()
-    "Detect namespace based on project root and file path."
-    (let* ((root (project-root (project-current t)))
-           (relative (file-relative-name default-directory root))
-           (ns (replace-regexp-in-string "/" "." relative)))
-      (replace-regexp-in-string "[^a-zA-Z0-9.]" "" ns)))
 
 (setq org-directory "~/org/")
 (setq org-default-notes-file (expand-file-name "todo.org" org-directory))
@@ -207,8 +184,8 @@
 (use-package org
   :straight (:type built-in) ;; org is built into Emacs
   :hook ((org-mode . visual-line-mode)
-	 (org-mode . display-line-numbers-mode)
-	 (org-mode . diff-hl-mode))
+       (org-mode . display-line-numbers-mode)
+       (org-mode . diff-hl-mode))
   :config
   (setq org-hide-emphasis-markers t
         org-startup-indented t

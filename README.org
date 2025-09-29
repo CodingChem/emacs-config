@@ -227,39 +227,16 @@ this file loads first.
 #+END_SRC
 *** Languages
 #+BEGIN_SRC emacs-lisp
-  (with-eval-after-load 'csharp-mode
+  (use-package sharper
+    :demand t
+    :general
     (my/leader-keys
       :keymaps 'csharp-mode-map
-      "n" '(:ignore t :which-key "new")
-      "nt" '(my/csharp-create-type :which-key "new type")))
+      "s" '(sharper-main-transient :which-key "sharper"))
+    )
 
-(setq lsp-csharp-server 'omnisharp)
-(setq lsp-omnisharp-server-executable "~/tools/omnisharp/OmniSharp")
-
-  ;; Force override of the client definition
-  ;; (lsp-register-client
-  ;;  (make-lsp-client
-  ;;   :new-connection (lsp-stdio-connection '("csharp-ls"))
-  ;;   :major-modes '(csharp-mode)
-  ;;   :server-id 'csharp-ls)))
-
-  (defun my/csharp-create-type (type name)
-    "Create a new C# TYPE (class, record, interface) named NAME in a new file."
-    (interactive
-     (list (completing-read "Type: " '("class" "record" "interface"))
-           (read-string "Name: ")))
-    (let* ((file (concat name ".cs"))
-           (ns (my/csharp-detect-namespace)))
-      (find-file file)
-      (insert (format "namespace %s\n{\n    public %s %s\n    {\n        \n    }\n}" ns type name))
-      (save-buffer)))
-
-  (defun my/csharp-detect-namespace ()
-    "Detect namespace based on project root and file path."
-    (let* ((root (project-root (project-current t)))
-           (relative (file-relative-name default-directory root))
-           (ns (replace-regexp-in-string "/" "." relative)))
-      (replace-regexp-in-string "[^a-zA-Z0-9.]" "" ns)))
+  (setq lsp-csharp-server 'omnisharp)
+  (setq lsp-omnisharp-server-executable "~/tools/omnisharp/OmniSharp")
 #+END_SRC
 ** Org setup
 *** Org mode
